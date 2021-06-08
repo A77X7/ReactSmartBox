@@ -20,15 +20,7 @@ function App() {
                 </a>
             </header>
             <SmartBox>
-                <a
-                    onClick={e => {
-                        alert("click");
-                    }}
-                    onMouseDown={e => {
-                        console.log("p down");
-                    }}
-                    href="http://ya.ru"
-                > Hello!</a>
+                <img src={logo} className="App-logo" alt="logo" style={{ height: "100%", width: "100%" }} />
             </SmartBox>
         </div>
     );
