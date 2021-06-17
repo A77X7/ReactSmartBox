@@ -19,8 +19,11 @@ function App() {
                     Learn React
                 </a>
             </header>
-            <SmartBox>
-                <img src={logo} className="App-logo" alt="logo" style={{ height: "100%", width: "100%" }} />
+            <SmartBox angle={0}>
+                <div style={{ width: "100%", height: "100%", overflow: "hidden" }}>
+                    <img src={logo} className="App-logo" alt="logo" style={{ height: "80%", width: "100%" }} />
+                    <div style={{ height: "20%" }}>SmartBox</div>
+                </div>
             </SmartBox>
         </div>
     );
