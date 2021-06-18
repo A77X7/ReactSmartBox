@@ -1,5 +1,7 @@
 ﻿import React from 'react';
 
+type SizingType = "right" | "right-top" | "top" | "left-top" | "left" | "left-bottom" | "bottom" | "right-bottom";
+
 interface SmartBoxProps {
     left?: number;
     top?: number;
@@ -12,6 +14,9 @@ interface SmartBoxProps {
     handleSizePx?: number;
     angle?: number;
     style?: React.CSSProperties;
+    disableSizing?: SizingType[] | boolean;
+    disableRotating?: boolean;
+    disableDragging?: boolean;
 }
 
 interface SmartBoxState {
@@ -20,7 +25,7 @@ interface SmartBoxState {
     width: number;
     height: number;
     dragging: boolean;
-    sizing?: "right" | "right-top" | "top" | "left-top" | "left" | "left-bottom" | "bottom" | "right-bottom";
+    sizing?: SizingType;
     rotating: boolean;
     angle: number;
 }
@@ -121,7 +126,10 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
         outlineWidth: 1,
         outlineOffset: -1,
         handleSizePx: 10,
-        angle: 0
+        angle: 0,
+        disableDragging: false,
+        disableRotating: false,
+        disableSizing: false
     }
 
     mouseDownEvent?: React.MouseEvent<HTMLDivElement, MouseEvent>;
@@ -369,7 +377,7 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                 height: this.state.height,
                 transform: `rotate(${this.state.angle}deg)`,
             }}
-            onMouseDown={e => {
+            onMouseDown={this.props.disableDragging ? undefined : e => {
                 if (e.button != 0 || e.shiftKey || e.altKey || e.ctrlKey)
                     return;
                 console.log("down", this, e);
@@ -397,7 +405,8 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineColor: this.props.outlineColor,
                     outlineStyle: "solid",
                     outlineWidth: 1,
-                    outlineOffset: -1
+                    outlineOffset: -1,
+                    visibility: (this.props.disableSizing === true || (this.props.disableSizing as SizingType[])!.includes("left-top")) ? "hidden" : "visible"
                 }}
                 title={sizeTitle}
                 onMouseDown={e => {
@@ -426,7 +435,8 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineColor: this.props.outlineColor,
                     outlineStyle: "solid",
                     outlineWidth: 1,
-                    outlineOffset: -1
+                    outlineOffset: -1,
+                    visibility: (this.props.disableSizing === true || (this.props.disableSizing as SizingType[])!.includes("right-top")) ? "hidden" : "visible"
                 }}
                 title={sizeTitle}
                 onMouseDown={e => {
@@ -455,7 +465,8 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineColor: this.props.outlineColor,
                     outlineStyle: "solid",
                     outlineWidth: 1,
-                    outlineOffset: -1
+                    outlineOffset: -1,
+                    visibility: (this.props.disableSizing === true || (this.props.disableSizing as SizingType[])!.includes("left-bottom")) ? "hidden" : "visible"
                 }}
                 title={sizeTitle}
                 onMouseDown={e => {
@@ -484,7 +495,8 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineColor: this.props.outlineColor,
                     outlineStyle: "solid",
                     outlineWidth: 1,
-                    outlineOffset: -1
+                    outlineOffset: -1,
+                    visibility: (this.props.disableSizing === true || (this.props.disableSizing as SizingType[])!.includes("right-bottom")) ? "hidden" : "visible"
                 }}
                 title={sizeTitle}
                 onMouseDown={e => {
@@ -514,7 +526,8 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineColor: this.props.outlineColor,
                     outlineStyle: "solid",
                     outlineWidth: 1,
-                    outlineOffset: -1
+                    outlineOffset: -1,
+                    visibility: (this.props.disableSizing === true || (this.props.disableSizing as SizingType[])!.includes("top")) ? "hidden" : "visible"
                 }}
                 title={sizeTitle}
                 onMouseDown={e => {
@@ -543,7 +556,8 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineColor: this.props.outlineColor,
                     outlineStyle: "solid",
                     outlineWidth: 1,
-                    outlineOffset: -1
+                    outlineOffset: -1,
+                    visibility: (this.props.disableSizing === true || (this.props.disableSizing as SizingType[])!.includes("bottom")) ? "hidden" : "visible"
                 }}
                 title={sizeTitle}
                 onMouseDown={e => {
@@ -572,7 +586,8 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineColor: this.props.outlineColor,
                     outlineStyle: "solid",
                     outlineWidth: 1,
-                    outlineOffset: -1
+                    outlineOffset: -1,
+                    visibility: (this.props.disableSizing === true || (this.props.disableSizing as SizingType[])!.includes("left")) ? "hidden" : "visible"
                 }}
                 title={sizeTitle}
                 onMouseDown={e => {
@@ -601,7 +616,8 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineColor: this.props.outlineColor,
                     outlineStyle: "solid",
                     outlineWidth: 1,
-                    outlineOffset: -1
+                    outlineOffset: -1,
+                    visibility: (this.props.disableSizing === true || (this.props.disableSizing as SizingType[])!.includes("right")) ? "hidden" : "visible"
                 }}
                 title={sizeTitle}
                 onMouseDown={e => {
@@ -618,47 +634,49 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     e.stopPropagation();
                 }}
             />
-            {/*Rotate*/}
-            <div
-                //top
-                ref={r => this.divRotate = r || undefined}
-                style={{
-                    position: "absolute",
-                    left: rotatePos.left,
-                    top: rotatePos.top,
-                    width: this.props.handleSizePx! - 1,
-                    height: this.props.handleSizePx! - 1,
-                    borderColor: this.props.outlineColor,
-                    borderStyle: "solid",
-                    borderWidth: 1,
-                    borderRadius: "50%",
-                    cursor: "alias"
-                }}
-                title={`Двойной щелчок - установка угла кратного 90 градусам\nAlt + двойной щелчок - кратно 15 градусам\nShift + двойной щелчок - вращение против часовой стрелки кратно 90 или 15 градусам (в зависимости от Alt)\nТекущий угол, градусов - ${this.state.angle}`}
-                onMouseDown={e => {
-                    if (e.button != 0)
-                        return;
-                    console.log("down rotate", this, e);
-                    this.mouseDownEvent = e;
-                    this.setState({ ...this.state, rotating: true });
-                    window.addEventListener("mouseup", this.mouseUp);
-                    window.addEventListener("mousemove", this.mouseMove);
-                    e.preventDefault();
-                    e.stopPropagation();
-                }}
-                onDoubleClick={e => {
-                    console.log("dblclick rotate", this, e);
-                    let step = e.altKey ? 15 : 90;
-                    if (this.state.angle % step === 0) {
-                        step *= e.shiftKey ? -1 : 1;
-                        this.setState({ ...this.state, angle: (this.state.angle + step + 360) % 360 });
-                    } else {
-                        this.setState({ ...this.state, angle: 0 });
-                    }
-                    e.preventDefault();
-                    e.stopPropagation();
-                }}
-            />
+            {/*Rotate*/
+                this.props.disableRotating ? undefined :
+                    <div
+                        //top
+                        ref={r => this.divRotate = r || undefined}
+                        style={{
+                            position: "absolute",
+                            left: rotatePos.left,
+                            top: rotatePos.top,
+                            width: this.props.handleSizePx! - 1,
+                            height: this.props.handleSizePx! - 1,
+                            borderColor: this.props.outlineColor,
+                            borderStyle: "solid",
+                            borderWidth: 1,
+                            borderRadius: "50%",
+                            cursor: "alias"
+                        }}
+                        title={`Двойной щелчок - установка угла кратного 90 градусам\nAlt + двойной щелчок - кратно 15 градусам\nShift + двойной щелчок - вращение против часовой стрелки кратно 90 или 15 градусам (в зависимости от Alt)\nТекущий угол, градусов - ${this.state.angle}`}
+                        onMouseDown={e => {
+                            if (e.button != 0)
+                                return;
+                            console.log("down rotate", this, e);
+                            this.mouseDownEvent = e;
+                            this.setState({ ...this.state, rotating: true });
+                            window.addEventListener("mouseup", this.mouseUp);
+                            window.addEventListener("mousemove", this.mouseMove);
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }}
+                        onDoubleClick={e => {
+                            console.log("dblclick rotate", this, e);
+                            let step = e.altKey ? 15 : 90;
+                            if (this.state.angle % step === 0) {
+                                step *= e.shiftKey ? -1 : 1;
+                                this.setState({ ...this.state, angle: (this.state.angle + step + 360) % 360 });
+                            } else {
+                                this.setState({ ...this.state, angle: 0 });
+                            }
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }}
+                    />
+            }
         </div>;
     }
 
