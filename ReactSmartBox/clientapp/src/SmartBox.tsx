@@ -4,21 +4,23 @@ import { Property } from "csstype";
 type SizingType = "right" | "right-top" | "top" | "left-top" | "left" | "left-bottom" | "bottom" | "right-bottom";
 
 interface SmartBoxProps {
-    left?: number;
-    top?: number;
-    width?: number;
-    height?: number;
+    defaultLeft?: number;
+    defaultTop?: number;
+    defaultWidth?: number;
+    defaultHeight?: number;
     outlineColor?: string;
     outlineStyle?: string;
     outlineWidth?: number | string;
     outlineOffset?: number | string;
     handleSizePx?: number;
-    angle?: number;
+    defaultAngle?: number;
     style?: React.CSSProperties;
     disableSizing?: SizingType[];
     disableAllSizing?: boolean;
     disableRotating?: boolean;
     disableDragging?: boolean;
+    disableHorizontalDragging?: boolean;
+    disableVerticalDragging?: boolean;
 }
 
 interface SmartBoxState {
@@ -119,20 +121,22 @@ function length(x1: number, y1: number, x2: number, y2: number) {
 
 export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxState> {
     static defaultProps: Partial<SmartBoxProps> = {
-        left: 100,
-        top: 100,
-        width: 100,
-        height: 100,
+        defaultLeft: 100,
+        defaultTop: 100,
+        defaultWidth: 100,
+        defaultHeight: 100,
         outlineColor: "red",
         outlineStyle: "dashed",
         outlineWidth: 1,
         outlineOffset: -1,
         handleSizePx: 10,
-        angle: 0,
+        defaultAngle: 0,
         disableDragging: false,
         disableRotating: false,
         disableSizing: [],
-        disableAllSizing: false
+        disableAllSizing: false,
+        disableHorizontalDragging: false,
+        disableVerticalDragging: false
     }
 
     mouseDownEvent?: React.MouseEvent<HTMLDivElement, MouseEvent>;
@@ -149,13 +153,13 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
     constructor(props: SmartBoxProps) {
         super(props);
         this.state = {
-            left: isNullOrUndefined(props.left) ? SmartBox.defaultProps.left! : props.left!,
-            top: isNullOrUndefined(props.top) ? SmartBox.defaultProps.top! : props.top!,
-            width: isNullOrUndefined(props.width) ? SmartBox.defaultProps.width! : props.width!,
-            height: isNullOrUndefined(props.height) ? SmartBox.defaultProps.height! : props.height!,
+            left: isNullOrUndefined(props.defaultLeft) ? SmartBox.defaultProps.defaultLeft! : props.defaultLeft!,
+            top: isNullOrUndefined(props.defaultTop) ? SmartBox.defaultProps.defaultTop! : props.defaultTop!,
+            width: isNullOrUndefined(props.defaultWidth) ? SmartBox.defaultProps.defaultWidth! : props.defaultWidth!,
+            height: isNullOrUndefined(props.defaultHeight) ? SmartBox.defaultProps.defaultHeight! : props.defaultHeight!,
             dragging: false,
             rotating: false,
-            angle: props.angle || SmartBox.defaultProps.angle!
+            angle: props.defaultAngle || SmartBox.defaultProps.defaultAngle!
         };
         this.mouseMove = this.mouseMove.bind(this);
         this.mouseUp = this.mouseUp.bind(this);
@@ -186,9 +190,12 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
         if (this.state.dragging) {
             const newCenterX = e.clientX - this.centerOffsetX;
             const newCenterY = e.clientY - this.centerOffsetY;
-            const newLeft = newCenterX + this.state.width / 2;
-            const newTop = newCenterY + this.state.height / 2;
-            this.setState({ ...this.state, left: newLeft, top: newTop });
+            const newLeftTop: { left?: number, top?: number } = {};
+            if (!this.props.disableHorizontalDragging)
+                newLeftTop.left = newCenterX + this.state.width / 2;
+            if (!this.props.disableVerticalDragging)
+                newLeftTop.top = newCenterY + this.state.height / 2;
+            this.setState({ ...this.state, ...newLeftTop });
         } else if (this.state.sizing === "right-bottom") {
             //чтобы вычислить новые ширину и высоту, поворачиваем обратно, чтобы вычисления были при угле равном нулю...
 

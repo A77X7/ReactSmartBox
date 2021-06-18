@@ -19,7 +19,7 @@ function App() {
                     Learn React
                 </a>
             </header>
-            <SmartBox angle={0} disableDragging disableSizing={["left-top", "left-bottom", 'right', "left", 'bottom', 'right-top', 'top']}>
+            <SmartBox defaultAngle={0} disableVerticalDragging disableSizing={["left-top", "left-bottom", 'right', "left", 'bottom', 'right-top', 'top']}>
                 <div style={{ width: "100%", height: "100%", overflow: "hidden" }}>
                     <input style={{ height: "15%", width: "80%" }} onFocus={e => console.log("focus")} onMouseDown={e => {
                         console.log("down on input", e);
@@ -31,7 +31,7 @@ function App() {
                     <div style={{ height: "15%" }}>SmartBox</div>
                 </div>
             </SmartBox>
-            <SmartBox angle={0}>
+            <SmartBox defaultAngle={0} disableHorizontalDragging>
                 <div style={{ width: "100%", height: "100%", overflow: "hidden" }}>
                     <img src={logo} className="App-logo" alt="logo" style={{ height: "70%", width: "100%" }} />
                     <div style={{ height: "15%" }}>SmartBox</div>
