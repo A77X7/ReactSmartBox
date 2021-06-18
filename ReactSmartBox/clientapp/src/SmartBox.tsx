@@ -1,4 +1,5 @@
 ﻿import React from 'react';
+import { Property } from "csstype";
 
 type SizingType = "right" | "right-top" | "top" | "left-top" | "left" | "left-bottom" | "bottom" | "right-bottom";
 
@@ -14,7 +15,8 @@ interface SmartBoxProps {
     handleSizePx?: number;
     angle?: number;
     style?: React.CSSProperties;
-    disableSizing?: SizingType[] | boolean;
+    disableSizing?: SizingType[];
+    disableAllSizing?: boolean;
     disableRotating?: boolean;
     disableDragging?: boolean;
 }
@@ -129,7 +131,8 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
         angle: 0,
         disableDragging: false,
         disableRotating: false,
-        disableSizing: false
+        disableSizing: [],
+        disableAllSizing: false
     }
 
     mouseDownEvent?: React.MouseEvent<HTMLDivElement, MouseEvent>;
@@ -347,6 +350,38 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
         }
     }
 
+    getCursor(cornerOrEdge: SizingType) {
+        const degrees: { [sizingType: string]: number } = {
+            "top": 0,
+            "right-top": 45,
+            "right": 90,
+            "right-bottom": 135,
+            "bottom": 180,
+            "left-bottom": 225,
+            "left": 270,
+            "left-top": 315
+
+        };
+        const cursors: { [angle: number]: Property.Cursor } = {
+            0: "ns-resize",
+            45: "nesw-resize",
+            90: "ew-resize",
+            135: "nwse-resize",
+            180: "ns-resize",
+            225: "nesw-resize",
+            270: "ew-resize",
+            315: "nwse-resize"
+        };
+        let a = this.state.angle;
+        let mod = this.state.angle % 45;
+        if (mod < 22.5)
+            a -= mod;
+        else
+            a = a - mod + 45;
+        a += 360;
+        return cursors[(degrees[cornerOrEdge] + a) % 360];
+    }
+
     div?: HTMLDivElement;
     divRotate?: HTMLDivElement;
     divLeftTop?: HTMLDivElement;
@@ -406,7 +441,8 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineStyle: "solid",
                     outlineWidth: 1,
                     outlineOffset: -1,
-                    visibility: (this.props.disableSizing === true || (this.props.disableSizing as SizingType[])!.includes("left-top")) ? "hidden" : "visible"
+                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "left-top") !== -1) ? "hidden" : "visible",
+                    cursor: this.getCursor('left-top')
                 }}
                 title={sizeTitle}
                 onMouseDown={e => {
@@ -436,7 +472,8 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineStyle: "solid",
                     outlineWidth: 1,
                     outlineOffset: -1,
-                    visibility: (this.props.disableSizing === true || (this.props.disableSizing as SizingType[])!.includes("right-top")) ? "hidden" : "visible"
+                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "right-top") !== -1) ? "hidden" : "visible",
+                    cursor: this.getCursor('right-top')
                 }}
                 title={sizeTitle}
                 onMouseDown={e => {
@@ -466,7 +503,8 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineStyle: "solid",
                     outlineWidth: 1,
                     outlineOffset: -1,
-                    visibility: (this.props.disableSizing === true || (this.props.disableSizing as SizingType[])!.includes("left-bottom")) ? "hidden" : "visible"
+                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "left-bottom") !== -1) ? "hidden" : "visible",
+                    cursor: this.getCursor('left-bottom')
                 }}
                 title={sizeTitle}
                 onMouseDown={e => {
@@ -496,7 +534,8 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineStyle: "solid",
                     outlineWidth: 1,
                     outlineOffset: -1,
-                    visibility: (this.props.disableSizing === true || (this.props.disableSizing as SizingType[])!.includes("right-bottom")) ? "hidden" : "visible"
+                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "right-bottom") !== -1) ? "hidden" : "visible",
+                    cursor: this.getCursor('right-bottom')
                 }}
                 title={sizeTitle}
                 onMouseDown={e => {
@@ -527,7 +566,8 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineStyle: "solid",
                     outlineWidth: 1,
                     outlineOffset: -1,
-                    visibility: (this.props.disableSizing === true || (this.props.disableSizing as SizingType[])!.includes("top")) ? "hidden" : "visible"
+                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "top") !== -1) ? "hidden" : "visible",
+                    cursor: this.getCursor('top')
                 }}
                 title={sizeTitle}
                 onMouseDown={e => {
@@ -557,7 +597,8 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineStyle: "solid",
                     outlineWidth: 1,
                     outlineOffset: -1,
-                    visibility: (this.props.disableSizing === true || (this.props.disableSizing as SizingType[])!.includes("bottom")) ? "hidden" : "visible"
+                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "bottom") !== -1) ? "hidden" : "visible",
+                    cursor: this.getCursor('bottom')
                 }}
                 title={sizeTitle}
                 onMouseDown={e => {
@@ -587,7 +628,8 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineStyle: "solid",
                     outlineWidth: 1,
                     outlineOffset: -1,
-                    visibility: (this.props.disableSizing === true || (this.props.disableSizing as SizingType[])!.includes("left")) ? "hidden" : "visible"
+                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "left") !== -1) ? "hidden" : "visible",
+                    cursor: this.getCursor('left')
                 }}
                 title={sizeTitle}
                 onMouseDown={e => {
@@ -617,7 +659,8 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineStyle: "solid",
                     outlineWidth: 1,
                     outlineOffset: -1,
-                    visibility: (this.props.disableSizing === true || (this.props.disableSizing as SizingType[])!.includes("right")) ? "hidden" : "visible"
+                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "right") !== -1) ? "hidden" : "visible",
+                    cursor: this.getCursor('right')
                 }}
                 title={sizeTitle}
                 onMouseDown={e => {
