@@ -21,8 +21,23 @@ function App() {
             </header>
             <SmartBox angle={0}>
                 <div style={{ width: "100%", height: "100%", overflow: "hidden" }}>
-                    <img src={logo} className="App-logo" alt="logo" style={{ height: "80%", width: "100%" }} />
-                    <div style={{ height: "20%" }}>SmartBox</div>
+                    <input style={{ height: "15%", width: "80%" }} onFocus={e => console.log("focus")} onMouseDown={e => {
+                        console.log("down on input", e);
+                        //e.preventDefault();
+                        //e.stopPropagation();
+
+                    }} />
+                    <img src={logo} className="App-logo" alt="logo" style={{ height: "70%", width: "100%" }} />
+                    <div style={{ height: "15%" }}>SmartBox</div>
+                </div>
+            </SmartBox>
+            <SmartBox angle={0}>
+                <div style={{ width: "100%", height: "100%", overflow: "hidden" }}>
+                    <img src={logo} className="App-logo" alt="logo" style={{ height: "70%", width: "100%" }} />
+                    <div style={{ height: "15%" }}>SmartBox</div>
+                    <button style={{ height: "15%", width: "80%" }} onClick={e => console.log("click", e)} onMouseUp={e => {
+                        console.log("up on button", e);
+                    }} />
                 </div>
             </SmartBox>
         </div>
