@@ -249,9 +249,10 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
 
             const parentXY = this.clientToParent(newLeft, newTop);
 
-            this.setState({ ...this.state, width: newWidth, height: newHeight, left: parentXY.x, top: parentXY.y }, () => {
-                this.props.onSizing?.(e, { ...this.state });
-            });
+            if (newWidth >= 0 && newHeight >= 0)
+                this.setState({ ...this.state, width: newWidth, height: newHeight, left: parentXY.x, top: parentXY.y }, () => {
+                    this.props.onSizing?.(e, { ...this.state });
+                });
         } else if (this.state.sizing === "left-top") {
             //чтобы вычислить новые ширину и высоту, поворачиваем обратно, чтобы вычисления были при угле равном нулю...
 
@@ -268,9 +269,10 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
 
             const parentXY = this.clientToParent(unrotatedX, unrotatedY);
 
-            this.setState({ ...this.state, width: newWidth, height: newHeight, left: parentXY.x, top: parentXY.y }, () => {
-                this.props.onSizing?.(e, { ...this.state });
-            });
+            if (newWidth >= 0 && newHeight >= 0)
+                this.setState({ ...this.state, width: newWidth, height: newHeight, left: parentXY.x, top: parentXY.y }, () => {
+                    this.props.onSizing?.(e, { ...this.state });
+                });
         } else if (this.state.sizing === "right-top") {
             //чтобы вычислить новые ширину и высоту, поворачиваем обратно, чтобы вычисления были при угле равном нулю...
 
@@ -287,9 +289,10 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
 
             const parentXY = this.clientToParent(newLeft, unrotatedY);
 
-            this.setState({ ...this.state, width: newWidth, height: newHeight, left: parentXY.x, top: parentXY.y }, () => {
-                this.props.onSizing?.(e, { ...this.state });
-            });
+            if (newWidth >= 0 && newHeight >= 0)
+                this.setState({ ...this.state, width: newWidth, height: newHeight, left: parentXY.x, top: parentXY.y }, () => {
+                    this.props.onSizing?.(e, { ...this.state });
+                });
         } else if (this.state.sizing === "left-bottom") {
             //чтобы вычислить новые ширину и высоту, поворачиваем обратно, чтобы вычисления были при угле равном нулю...
 
@@ -306,15 +309,22 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
 
             const parentXY = this.clientToParent(unrotatedX, newTop);
 
-            this.setState({ ...this.state, width: newWidth, height: newHeight, left: parentXY.x, top: parentXY.y }, () => {
-                this.props.onSizing?.(e, { ...this.state });
-            });
+            if (newWidth >= 0 && newHeight >= 0)
+                this.setState({ ...this.state, width: newWidth, height: newHeight, left: parentXY.x, top: parentXY.y }, () => {
+                    this.props.onSizing?.(e, { ...this.state });
+                });
         } else if (this.state.sizing === "top") {
             //чтобы вычислить новые ширину и высоту, поворачиваем обратно, чтобы вычисления были при угле равном нулю...
 
+            const leftTop = this.parentToClient(this.state.left, this.state.top);
+
             const oldCenter = center(this.div!.getBoundingClientRect());
             const newOldUnrotatedMouse = rotate(e.clientX, e.clientY, oldCenter.x, oldCenter.y, -this.state.angle);
-            const newRotatedLeftTop = rotate(this.parentToClient(this.state.left, this.state.top).x, newOldUnrotatedMouse.y, oldCenter.x, oldCenter.y, this.state.angle);
+
+            if (newOldUnrotatedMouse.y > oldCenter.y + this.state.height / 2)
+                return;
+
+            const newRotatedLeftTop = rotate(leftTop.x, newOldUnrotatedMouse.y, oldCenter.x, oldCenter.y, this.state.angle);
             const newRotatedTop = rotate(oldCenter.x, newOldUnrotatedMouse.y, oldCenter.x, oldCenter.y, this.state.angle);
             const newCenter = middle(newRotatedTop.x, newRotatedTop.y, this.oldOppositeRotatedX, this.oldOppositeRotatedY);
             const newLeftTop = rotate(newRotatedLeftTop.x, newRotatedLeftTop.y, newCenter.x, newCenter.y, -this.state.angle);
@@ -328,9 +338,15 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
         } else if (this.state.sizing === "left") {
             //чтобы вычислить новые ширину и высоту, поворачиваем обратно, чтобы вычисления были при угле равном нулю...
 
+            const leftTop = this.parentToClient(this.state.left, this.state.top);
+
             const oldCenter = center(this.div!.getBoundingClientRect());
             const newOldUnrotatedMouse = rotate(e.clientX, e.clientY, oldCenter.x, oldCenter.y, -this.state.angle);
-            const newRotatedLeftTop = rotate(newOldUnrotatedMouse.x, this.parentToClient(this.state.left, this.state.top).y, oldCenter.x, oldCenter.y, this.state.angle);
+
+            if (newOldUnrotatedMouse.x > oldCenter.x + this.state.width / 2)
+                return;
+
+            const newRotatedLeftTop = rotate(newOldUnrotatedMouse.x, leftTop.y, oldCenter.x, oldCenter.y, this.state.angle);
             const newRotatedLeft = rotate(newOldUnrotatedMouse.x, oldCenter.y, oldCenter.x, oldCenter.y, this.state.angle);
             const newCenter = middle(newRotatedLeft.x, newRotatedLeft.y, this.oldOppositeRotatedX, this.oldOppositeRotatedY);
             const newLeftTop = rotate(newRotatedLeftTop.x, newRotatedLeftTop.y, newCenter.x, newCenter.y, -this.state.angle);
@@ -346,11 +362,16 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
 
             const oldCenter = center(this.div!.getBoundingClientRect());
             const newOldUnrotatedMouse = rotate(e.clientX, e.clientY, oldCenter.x, oldCenter.y, -this.state.angle);
-            const newRotatedLeftTop = rotate(this.state.left, this.state.top, oldCenter.x, oldCenter.y, this.state.angle);//change to bb ??
+
+            if (newOldUnrotatedMouse.y < oldCenter.y - this.state.height / 2)
+                return;
+
+            const newRotatedLeftTop = rotate(this.state.left, this.state.top, oldCenter.x, oldCenter.y, this.state.angle);
             const newRotatedLeft = rotate(oldCenter.x, newOldUnrotatedMouse.y, oldCenter.x, oldCenter.y, this.state.angle);
             const newCenter = middle(newRotatedLeft.x, newRotatedLeft.y, this.oldOppositeRotatedX, this.oldOppositeRotatedY);
             const newLeftTop = rotate(newRotatedLeftTop.x, newRotatedLeftTop.y, newCenter.x, newCenter.y, -this.state.angle);
             const newHeight = length(newRotatedLeft.x, newRotatedLeft.y, this.oldOppositeRotatedX, this.oldOppositeRotatedY);
+
             this.setState({ ...this.state, left: newLeftTop.x, top: newLeftTop.y, height: newHeight }, () => {
                 this.props.onSizing?.(e, { ...this.state });
             });
@@ -359,11 +380,16 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
 
             const oldCenter = center(this.div!.getBoundingClientRect());
             const newOldUnrotatedMouse = rotate(e.clientX, e.clientY, oldCenter.x, oldCenter.y, -this.state.angle);
-            const newRotatedLeftTop = rotate(this.state.left, this.state.top, oldCenter.x, oldCenter.y, this.state.angle);//change to bb ??
+
+            if (newOldUnrotatedMouse.x < oldCenter.x - this.state.width / 2)
+                return;
+
+            const newRotatedLeftTop = rotate(this.state.left, this.state.top, oldCenter.x, oldCenter.y, this.state.angle);
             const newRotatedLeft = rotate(newOldUnrotatedMouse.x, oldCenter.y, oldCenter.x, oldCenter.y, this.state.angle);
             const newCenter = middle(newRotatedLeft.x, newRotatedLeft.y, this.oldOppositeRotatedX, this.oldOppositeRotatedY);
             const newLeftTop = rotate(newRotatedLeftTop.x, newRotatedLeftTop.y, newCenter.x, newCenter.y, -this.state.angle);
             const newWidth = length(newRotatedLeft.x, newRotatedLeft.y, this.oldOppositeRotatedX, this.oldOppositeRotatedY);
+
             this.setState({ ...this.state, left: newLeftTop.x, top: newLeftTop.y, width: newWidth }, () => {
                 this.props.onSizing?.(e, { ...this.state });
             });
