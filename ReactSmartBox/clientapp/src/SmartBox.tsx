@@ -218,7 +218,9 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
             const newWidth = unrotatedX - newLeft;
             const newHeight = unrotatedY - newTop;
 
-            this.setState({ ...this.state, width: newWidth, height: newHeight, left: newLeft, top: newTop });
+            const parentXY = this.clientToParent(newLeft, newTop);
+
+            this.setState({ ...this.state, width: newWidth, height: newHeight, left: parentXY.x, top: parentXY.y });
         } else if (this.state.sizing === "left-top") {
             //чтобы вычислить новые ширину и высоту, поворачиваем обратно, чтобы вычисления были при угле равном нулю...
 
@@ -233,7 +235,9 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
             const newWidth = newRight - unrotatedX;
             const newHeight = newBottom - unrotatedY;
 
-            this.setState({ ...this.state, width: newWidth, height: newHeight, left: unrotatedX, top: unrotatedY });
+            const parentXY = this.clientToParent(unrotatedX, unrotatedY);
+
+            this.setState({ ...this.state, width: newWidth, height: newHeight, left: parentXY.x, top: parentXY.y });
         } else if (this.state.sizing === "right-top") {
             //чтобы вычислить новые ширину и высоту, поворачиваем обратно, чтобы вычисления были при угле равном нулю...
 
@@ -248,7 +252,9 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
             const newWidth = unrotatedX - newLeft;
             const newHeight = newBottom - unrotatedY;
 
-            this.setState({ ...this.state, width: newWidth, height: newHeight, left: newLeft, top: unrotatedY });
+            const parentXY = this.clientToParent(newLeft, unrotatedY);
+
+            this.setState({ ...this.state, width: newWidth, height: newHeight, left: parentXY.x, top: parentXY.y });
         } else if (this.state.sizing === "left-bottom") {
             //чтобы вычислить новые ширину и высоту, поворачиваем обратно, чтобы вычисления были при угле равном нулю...
 
@@ -263,29 +269,37 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
             const newWidth = newRight - unrotatedX;
             const newHeight = unrotatedY - newTop;
 
-            this.setState({ ...this.state, width: newWidth, height: newHeight, left: unrotatedX, top: newTop });
+            const parentXY = this.clientToParent(unrotatedX, newTop);
+
+            this.setState({ ...this.state, width: newWidth, height: newHeight, left: parentXY.x, top: parentXY.y });
         } else if (this.state.sizing === "top") {
             //чтобы вычислить новые ширину и высоту, поворачиваем обратно, чтобы вычисления были при угле равном нулю...
 
             const oldCenter = center(this.div!.getBoundingClientRect());
             const newOldUnrotatedMouse = rotate(e.clientX, e.clientY, oldCenter.x, oldCenter.y, -this.state.angle);
-            const newRotatedLeftTop = rotate(this.state.left, newOldUnrotatedMouse.y, oldCenter.x, oldCenter.y, this.state.angle);
+            const newRotatedLeftTop = rotate(this.parentToClient(this.state.left, this.state.top).x, newOldUnrotatedMouse.y, oldCenter.x, oldCenter.y, this.state.angle);
             const newRotatedTop = rotate(oldCenter.x, newOldUnrotatedMouse.y, oldCenter.x, oldCenter.y, this.state.angle);
             const newCenter = middle(newRotatedTop.x, newRotatedTop.y, this.oldOppositeRotatedX, this.oldOppositeRotatedY);
             const newLeftTop = rotate(newRotatedLeftTop.x, newRotatedLeftTop.y, newCenter.x, newCenter.y, -this.state.angle);
             const newHeight = length(newRotatedTop.x, newRotatedTop.y, this.oldOppositeRotatedX, this.oldOppositeRotatedY);
-            this.setState({ ...this.state, left: newLeftTop.x, top: newLeftTop.y, height: newHeight });
+
+            const parentXY = this.clientToParent(newLeftTop.x, newLeftTop.y);
+
+            this.setState({ ...this.state, left: parentXY.x, top: parentXY.y, height: newHeight });
         } else if (this.state.sizing === "left") {
             //чтобы вычислить новые ширину и высоту, поворачиваем обратно, чтобы вычисления были при угле равном нулю...
 
             const oldCenter = center(this.div!.getBoundingClientRect());
             const newOldUnrotatedMouse = rotate(e.clientX, e.clientY, oldCenter.x, oldCenter.y, -this.state.angle);
-            const newRotatedLeftTop = rotate(newOldUnrotatedMouse.x, this.state.top, oldCenter.x, oldCenter.y, this.state.angle);
+            const newRotatedLeftTop = rotate(newOldUnrotatedMouse.x, this.parentToClient(this.state.left, this.state.top).y, oldCenter.x, oldCenter.y, this.state.angle);
             const newRotatedLeft = rotate(newOldUnrotatedMouse.x, oldCenter.y, oldCenter.x, oldCenter.y, this.state.angle);
             const newCenter = middle(newRotatedLeft.x, newRotatedLeft.y, this.oldOppositeRotatedX, this.oldOppositeRotatedY);
             const newLeftTop = rotate(newRotatedLeftTop.x, newRotatedLeftTop.y, newCenter.x, newCenter.y, -this.state.angle);
             const newWidth = length(newRotatedLeft.x, newRotatedLeft.y, this.oldOppositeRotatedX, this.oldOppositeRotatedY);
-            this.setState({ ...this.state, left: newLeftTop.x, top: newLeftTop.y, width: newWidth });
+
+            const parentXY = this.clientToParent(newLeftTop.x, newLeftTop.y);
+
+            this.setState({ ...this.state, left: parentXY.x, top: parentXY.y, width: newWidth });
         } else if (this.state.sizing === "bottom") {
             //чтобы вычислить новые ширину и высоту, поворачиваем обратно, чтобы вычисления были при угле равном нулю...
 
@@ -380,6 +394,28 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
             a = a - mod + 45;
         a += 360;
         return cursors[(degrees[cornerOrEdge] + a) % 360];
+    }
+
+    clientToParent(x: number, y: number) {
+        const client = center(this.div!.getBoundingClientRect());
+        const parent = {
+            x: this.state.left + this.state.width / 2,
+            y: this.state.top + this.state.height / 2
+        };
+        const dx = client.x - parent.x;
+        const dy = client.y - parent.y;
+        return { x: x - dx, y: y - dy };
+    }
+
+    parentToClient(x: number, y: number) {
+        const client = center(this.div!.getBoundingClientRect());
+        const parent = {
+            x: this.state.left + this.state.width / 2,
+            y: this.state.top + this.state.height / 2
+        };
+        const dx = client.x - parent.x;
+        const dy = client.y - parent.y;
+        return { x: x + dx, y: y + dy };
     }
 
     div?: HTMLDivElement;
