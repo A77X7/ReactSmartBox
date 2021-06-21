@@ -70,7 +70,7 @@ type SizingType = "right" | "right-top" | "top" | "left-top" | "left" | "left-bo
 `true` to disable dragging vertically  
 
 All the events has same signature - original mouse event and copy of component state.  
-Each action has three events for begin, continue and end:  
+Each action has three events for begin (mouse down), continue (mouse move) and end (mouse up):  
 ```typescript
 onDraggingBegin?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>, state: SmartBoxState) => void  
 onDragging?: (e: MouseEvent, state: SmartBoxState) => void  
@@ -84,6 +84,7 @@ onRotatingEnd?: (e: MouseEvent, state: SmartBoxState) => void
 ```
 State type:  
 ```typescript
+type SizingType = "right" | "right-top" | "top" | "left-top" | "left" | "left-bottom" | "bottom" | "right-bottom";
 interface SmartBoxState {
     left: number;
     top: number;
