@@ -12,4 +12,4 @@ import SmartBox from './SmartBox';
 ```
 
 Demo:<br />
-![](https://github.com/A77X7/ReactSmartBox/clientapp/Demo/demo.gif)
+![](https://github.com/A77X7/ReactSmartBox/raw/master/ReactSmartBox/clientapp/Demo/demo.gif)
