@@ -13,6 +13,7 @@ import SmartBox from './SmartBox';
 
 ### Demo:<br />
 ![](https://github.com/A77X7/ReactSmartBox/raw/master/ReactSmartBox/clientapp/Demo/demo.gif)  
+![Demo source](https://github.com/A77X7/ReactSmartBox/blob/669f635d24c9de6635ca2ddb4ee4d694294d3606/ReactSmartBox/clientapp/src/App.js)  
 
 ### Props:<br />
 `defaultLeft?: number`  
