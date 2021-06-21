@@ -3,8 +3,8 @@ React component to drag, resize and rotate
 
 Since package has not been yet published on npm, to install component you need to copy one file to your project and import as usually.
 
-### File:<br />
-`ReactSmartBox/clientapp/src/SmartBox.tsx`  
+### File:<br />  
+![ReactSmartBox/clientapp/src/SmartBox.tsx](https://github.com/A77X7/ReactSmartBox/blob/924372578f0039536392dbb1205e7533a17c5484/ReactSmartBox/clientapp/src/SmartBox.tsx)
 
 ### Import:<br />
 ```javascript
