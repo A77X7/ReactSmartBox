@@ -31,7 +31,7 @@ function App() {
                     <div style={{ height: "15%" }}>SmartBox</div>
                 </div>
             </SmartBox>
-            <SmartBox defaultAngle={0} disableHorizontalDragging onSizingEnd={(e, s) => {
+            <SmartBox defaultAngle={0} onSizingEnd={(e, s) => {
                 console.log("sized", s);
             }}>
                 <div style={{ width: "100%", height: "100%", overflow: "hidden" }}>

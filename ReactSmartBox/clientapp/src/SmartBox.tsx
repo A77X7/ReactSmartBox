@@ -203,7 +203,7 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
     mouseMove(e: MouseEvent) {
         //console.log("move", this, e);
         e.preventDefault(); // to prevent text (or other content) selection
-        if (!e.movementX && !e.movementY)
+        if (e.movementX === 0 && e.movementY === 0) //TODO: IE not supported movementX/Y
             return;
         //this.mouseMoved = true;
         //console.log("moved", this, e);
