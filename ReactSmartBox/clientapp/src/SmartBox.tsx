@@ -30,6 +30,10 @@ interface SmartBoxProps {
     onRotatingBegin?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>, state: SmartBoxState) => void;
     onRotating?: (e: MouseEvent, state: SmartBoxState) => void;
     onRotatingEnd?: (e: MouseEvent, state: SmartBoxState) => void;
+    onClick?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>, state: SmartBoxState) => void;
+    onDoubleClick?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>, state: SmartBoxState) => void;
+    bounds?: Element | "none" | "parent" | { left: number, top: number, width: number, height: number };
+    //angle?: number;
 }
 
 interface SmartBoxState {
@@ -145,7 +149,9 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
         disableSizing: [],
         disableAllSizing: false,
         disableHorizontalDragging: false,
-        disableVerticalDragging: false
+        disableVerticalDragging: false,
+        bounds: 'parent'
+        //angle: 0
     }
 
     mouseDownEvent?: React.MouseEvent<HTMLDivElement, MouseEvent>;
@@ -168,11 +174,15 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
             height: isNullOrUndefined(props.defaultHeight) ? SmartBox.defaultProps.defaultHeight! : props.defaultHeight!,
             dragging: false,
             rotating: false,
-            angle: props.defaultAngle || SmartBox.defaultProps.defaultAngle!
+            angle: isNullOrUndefined(props.defaultAngle) ? SmartBox.defaultProps.defaultAngle! : props.defaultAngle!
         };
         this.mouseMove = this.mouseMove.bind(this);
         this.mouseUp = this.mouseUp.bind(this);
     }
+
+    //static getDerivedStateFromProps(props: SmartBoxProps, state: SmartBoxState) {
+
+    //}
 
     mouseUp(e: MouseEvent) {
         //console.log("up", this, e);
@@ -199,6 +209,153 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
         });
     }
 
+    getBoundingClientRect(rect: { left: number, top: number, width: number, height: number, angle: number }) {
+        let lt = this.parentToClient(rect.left, rect.top);
+        let lb = { x: lt.x, y: lt.y + rect.height };
+        let rt = { x: lt.x + rect.width, y: lt.y };
+        let rb = { x: rt.x, y: lb.y };
+        const c = center({ left: lt.x, top: lt.y, width: rect.width, height: rect.height });
+        lt = rotate(lt.x, lt.y, c.x, c.y, rect.angle);
+        lb = rotate(lb.x, lb.y, c.x, c.y, rect.angle);
+        rt = rotate(rt.x, rt.y, c.x, c.y, rect.angle);
+        rb = rotate(rb.x, rb.y, c.x, c.y, rect.angle);
+        const ret = {
+            left: Math.min(lt.x, lb.x, rt.x, rb.x),
+            top: Math.min(lt.y, lb.y, rt.y, rb.y),
+            right: Math.max(lt.x, lb.x, rt.x, rb.x),
+            bottom: Math.max(lt.y, lb.y, rt.y, rb.y)
+        };
+        return {
+            ...ret,
+            x: ret.left,
+            y: ret.top,
+            width: ret.right - ret.left,
+            height: ret.bottom - ret.top
+        };
+    }
+
+    getBounds() {
+        const bounds = this.props.bounds || SmartBox.defaultProps.bounds;
+        if (bounds === 'none' || isNullOrUndefined(bounds))
+            return undefined;
+        if (bounds === 'parent')
+            return this.div?.parentElement?.getBoundingClientRect();
+        if (bounds instanceof Element)
+            return bounds.getBoundingClientRect();
+        return bounds;
+    }
+
+    isOutOfBounds(inner: { left: number, top: number, width: number, height: number }, outer: { left: number, top: number, width: number, height: number }) {
+        if (!inner || !outer)
+            return undefined;
+        if (inner.left < outer.left
+            || inner.left + inner.width > outer.left + outer.width
+            || inner.top < outer.top
+            || inner.top + inner.height > outer.top + outer.height)
+            return true;
+        return false;
+    }
+
+    limitToBounds(inner: { left: number, top: number, width: number, height: number }, outer: { left: number, top: number, width: number, height: number }) {
+        if (!inner || !outer)
+            return;
+        if (inner.left + inner.width > outer.left + outer.width)
+            inner.left = outer.left + outer.width - inner.width;
+        if (inner.left < outer.left)
+            inner.left = outer.left;
+        if (inner.top + inner.height > outer.top + outer.height)
+            inner.top = outer.top + outer.height - inner.height;
+        if (inner.top < outer.top)
+            inner.top = outer.top;
+    }
+
+    limitDragByBounds(newLeftTop: { x: number, y: number }) {
+        const bs = this.getBounds();
+
+        if (!bs)
+            return newLeftTop;
+
+        //corners before rotation
+        let lt = newLeftTop;
+        let lb = { x: lt.x, y: lt.y + this.state.height };
+        let rt = { x: lt.x + this.state.width, y: lt.y };
+        let rb = { x: rt.x, y: lb.y };
+        const c = center({ left: lt.x, top: lt.y, width: this.state.width, height: this.state.height });
+        //corners after rotation
+        let LT = rotate(lt.x, lt.y, c.x, c.y, this.state.angle);
+        let LB = rotate(lb.x, lb.y, c.x, c.y, this.state.angle);
+        let RT = rotate(rt.x, rt.y, c.x, c.y, this.state.angle);
+        let RB = rotate(rb.x, rb.y, c.x, c.y, this.state.angle);
+
+        if (this.state.angle >= 0 && this.state.angle < 90) {
+            let dx = 0, dy = 0;
+            if (RT.x > bs.left + bs.width) {
+                dx = bs.left + bs.width - RT.x;
+            }
+            if (LB.x + dx < bs.left) {
+                dx = bs.left - LB.x;
+            }
+            if (RB.y > bs.top + bs.height) {
+                dy = bs.top + bs.height - RB.y;
+            }
+            if (LT.y + dy < bs.top) {
+                dy = bs.top - LT.y;
+            }
+            newLeftTop.x += dx;
+            newLeftTop.y += dy;
+        } else if (this.state.angle >= 90 && this.state.angle < 180) {
+            let dx = 0, dy = 0;
+            if (LT.x > bs.left + bs.width) {
+                dx = bs.left + bs.width - LT.x;
+            }
+            if (RB.x + dx < bs.left) {
+                dx = bs.left - RB.x;
+            }
+            if (RT.y > bs.top + bs.height) {
+                dy = bs.top + bs.height - RT.y;
+            }
+            if (LB.y + dy < bs.top) {
+                dy = bs.top - LB.y;
+            }
+            newLeftTop.x += dx;
+            newLeftTop.y += dy;
+        } else if (this.state.angle >= 180 && this.state.angle < 270) {
+            let dx = 0, dy = 0;
+            if (LB.x > bs.left + bs.width) {
+                dx = bs.left + bs.width - LB.x;
+            }
+            if (RT.x + dx < bs.left) {
+                dx = bs.left - RT.x;
+            }
+            if (LT.y > bs.top + bs.height) {
+                dy = bs.top + bs.height - LT.y;
+            }
+            if (RB.y + dy < bs.top) {
+                dy = bs.top - RB.y;
+            }
+            newLeftTop.x += dx;
+            newLeftTop.y += dy;
+        } else /*if (this.state.angle >= 270 && this.state.angle < 360)*/ {
+            let dx = 0, dy = 0;
+            if (RB.x > bs.left + bs.width) {
+                dx = bs.left + bs.width - RB.x;
+            }
+            if (LT.x + dx < bs.left) {
+                dx = bs.left - LT.x;
+            }
+            if (LB.y > bs.top + bs.height) {
+                dy = bs.top + bs.height - LB.y;
+            }
+            if (RT.y + dy < bs.top) {
+                dy = bs.top - RT.y;
+            }
+            newLeftTop.x += dx;
+            newLeftTop.y += dy;
+        }
+
+        return newLeftTop;
+    }
+
     //mouseMoved = false;
     mouseMove(e: MouseEvent) {
         //console.log("move", this, e);
@@ -210,12 +367,16 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
         if (this.state.dragging) {
             const newCenterX = e.clientX - this.centerOffsetX;
             const newCenterY = e.clientY - this.centerOffsetY;
-            const newLeftTop: { left?: number, top?: number } = {};
+            let newLeftTop = this.parentToClient(this.state.left, this.state.top);
             if (!this.props.disableHorizontalDragging)
-                newLeftTop.left = newCenterX + this.state.width / 2;
+                newLeftTop.x = newCenterX + this.state.width / 2;
             if (!this.props.disableVerticalDragging)
-                newLeftTop.top = newCenterY + this.state.height / 2;
-            this.setState({ ...this.state, ...newLeftTop }, () => {
+                newLeftTop.y = newCenterY + this.state.height / 2;
+
+            newLeftTop = this.limitDragByBounds(newLeftTop);
+
+            const xy = this.clientToParent(newLeftTop.x, newLeftTop.y);
+            this.setState({ ...this.state, left: xy.x, top: xy.y }, () => {
                 this.props.onDragging?.(e, { ...this.state });
             });
         } else if (this.state.sizing === "right-bottom") {
@@ -506,6 +667,7 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
         const sizeTitle = `${this.state.width} x ${this.state.height}`;
         return <div
             ref={r => this.div = r || undefined}
+            className={(this.props as any).className}
             style={{
                 outlineColor: this.props.outlineColor,
                 outlineStyle: this.props.outlineStyle,
@@ -526,8 +688,9 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     return;
                 //console.log("down", this, e);
                 this.mouseDownEvent = e;
-                this.centerOffsetX = e.clientX - this.state.left + this.state.width / 2;
-                this.centerOffsetY = e.clientY - this.state.top + this.state.height / 2;
+                const xy = this.parentToClient(this.state.left, this.state.top);
+                this.centerOffsetX = e.clientX - xy.x + this.state.width / 2;
+                this.centerOffsetY = e.clientY - xy.y + this.state.height / 2;
                 this.setState({ ...this.state, dragging: true }, () => {
                     this.props.onDraggingBegin?.(e, { ...this.state });
                     window.addEventListener("mouseup", this.mouseUp);
@@ -536,6 +699,7 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                 //e.preventDefault();
                 //e.stopPropagation();
             }}
+            onClick={this.props.onClick && (e => this.props.onClick?.(e, { ...this.state }))}
         >
             {this.props.children}
             {/*Corners*/}
@@ -552,7 +716,7 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineStyle: "solid",
                     outlineWidth: 1,
                     outlineOffset: -1,
-                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "left-top") !== -1) ? "hidden" : "visible",
+                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "left-top") !== -1 || !this.props.handleSizePx) ? "hidden" : "visible",
                     cursor: this.getCursor('left-top')
                 }}
                 title={sizeTitle}
@@ -585,7 +749,7 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineStyle: "solid",
                     outlineWidth: 1,
                     outlineOffset: -1,
-                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "right-top") !== -1) ? "hidden" : "visible",
+                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "right-top") !== -1 || !this.props.handleSizePx) ? "hidden" : "visible",
                     cursor: this.getCursor('right-top')
                 }}
                 title={sizeTitle}
@@ -618,7 +782,7 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineStyle: "solid",
                     outlineWidth: 1,
                     outlineOffset: -1,
-                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "left-bottom") !== -1) ? "hidden" : "visible",
+                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "left-bottom") !== -1 || !this.props.handleSizePx) ? "hidden" : "visible",
                     cursor: this.getCursor('left-bottom')
                 }}
                 title={sizeTitle}
@@ -651,7 +815,7 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineStyle: "solid",
                     outlineWidth: 1,
                     outlineOffset: -1,
-                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "right-bottom") !== -1) ? "hidden" : "visible",
+                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "right-bottom") !== -1 || !this.props.handleSizePx) ? "hidden" : "visible",
                     cursor: this.getCursor('right-bottom')
                 }}
                 title={sizeTitle}
@@ -685,7 +849,7 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineStyle: "solid",
                     outlineWidth: 1,
                     outlineOffset: -1,
-                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "top") !== -1) ? "hidden" : "visible",
+                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "top") !== -1 || !this.props.handleSizePx) ? "hidden" : "visible",
                     cursor: this.getCursor('top')
                 }}
                 title={sizeTitle}
@@ -718,7 +882,7 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineStyle: "solid",
                     outlineWidth: 1,
                     outlineOffset: -1,
-                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "bottom") !== -1) ? "hidden" : "visible",
+                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "bottom") !== -1 || !this.props.handleSizePx) ? "hidden" : "visible",
                     cursor: this.getCursor('bottom')
                 }}
                 title={sizeTitle}
@@ -751,7 +915,7 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineStyle: "solid",
                     outlineWidth: 1,
                     outlineOffset: -1,
-                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "left") !== -1) ? "hidden" : "visible",
+                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "left") !== -1 || !this.props.handleSizePx) ? "hidden" : "visible",
                     cursor: this.getCursor('left')
                 }}
                 title={sizeTitle}
@@ -784,7 +948,7 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                     outlineStyle: "solid",
                     outlineWidth: 1,
                     outlineOffset: -1,
-                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "right") !== -1) ? "hidden" : "visible",
+                    visibility: (this.props.disableAllSizing || this.props.disableSizing!.findIndex(v => v === "right") !== -1 || !this.props.handleSizePx) ? "hidden" : "visible",
                     cursor: this.getCursor('right')
                 }}
                 title={sizeTitle}
@@ -813,12 +977,13 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                             position: "absolute",
                             left: rotatePos.left,
                             top: rotatePos.top,
-                            width: this.props.handleSizePx! - 1,
-                            height: this.props.handleSizePx! - 1,
+                            width: this.props.handleSizePx! > 0 ? this.props.handleSizePx! - 1 : 0,
+                            height: this.props.handleSizePx! > 0 ? this.props.handleSizePx! - 1 : 0,
                             borderColor: this.props.outlineColor,
                             borderStyle: "solid",
                             borderWidth: 1,
                             borderRadius: "50%",
+                            visibility: (this.props.disableRotating || !this.props.handleSizePx) ? "hidden" : "visible",
                             cursor: "alias"
                         }}
                         title={`Двойной щелчок - установка угла кратного 90 градусам\nAlt + двойной щелчок - кратно 15 градусам\nShift + двойной щелчок - вращение против часовой стрелки кратно 90 или 15 градусам (в зависимости от Alt)\nТекущий угол, градусов - ${this.state.angle}`}
