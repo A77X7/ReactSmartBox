@@ -21,19 +21,23 @@ interface SmartBoxProps {
     disableDragging?: boolean;
     disableHorizontalDragging?: boolean;
     disableVerticalDragging?: boolean;
-    onDraggingBegin?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>, state: SmartBoxState) => void;
-    onDragging?: (e: MouseEvent, state: SmartBoxState) => void;
-    onDraggingEnd?: (e: MouseEvent, state: SmartBoxState) => void;
-    onSizingBegin?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>, state: SmartBoxState) => void;
-    onSizing?: (e: MouseEvent, state: SmartBoxState) => void;
-    onSizingEnd?: (e: MouseEvent, state: SmartBoxState) => void;
-    onRotatingBegin?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>, state: SmartBoxState) => void;
-    onRotating?: (e: MouseEvent, state: SmartBoxState) => void;
-    onRotatingEnd?: (e: MouseEvent, state: SmartBoxState) => void;
-    onClick?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>, state: SmartBoxState) => void;
-    onDoubleClick?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>, state: SmartBoxState) => void;
+    onDraggingBegin?: (e: MouseEvent | React.MouseEvent<HTMLDivElement, MouseEvent>, state: SmartBoxState) => void;
+    onDragging?: (e: MouseEvent | React.MouseEvent<HTMLDivElement, MouseEvent>, state: SmartBoxState) => void;
+    onDraggingEnd?: (e: MouseEvent | React.MouseEvent<HTMLDivElement, MouseEvent>, state: SmartBoxState) => void;
+    onSizingBegin?: (e: MouseEvent | React.MouseEvent<HTMLDivElement, MouseEvent>, state: SmartBoxState) => void;
+    onSizing?: (e: MouseEvent | React.MouseEvent<HTMLDivElement, MouseEvent>, state: SmartBoxState) => void;
+    onSizingEnd?: (e: MouseEvent | React.MouseEvent<HTMLDivElement, MouseEvent>, state: SmartBoxState) => void;
+    onRotatingBegin?: (e: MouseEvent | React.MouseEvent<HTMLDivElement, MouseEvent>, state: SmartBoxState) => void;
+    onRotating?: (e: MouseEvent | React.MouseEvent<HTMLDivElement, MouseEvent>, state: SmartBoxState) => void;
+    onRotatingEnd?: (e: MouseEvent | React.MouseEvent<HTMLDivElement, MouseEvent>, state: SmartBoxState) => void;
+    onClick?: (e: MouseEvent | React.MouseEvent<HTMLDivElement, MouseEvent>, state: SmartBoxState) => void;
+    onDoubleClick?: (e: MouseEvent | React.MouseEvent<HTMLDivElement, MouseEvent>, state: SmartBoxState) => void;
     bounds?: Element | "none" | "parent" | { left: number, top: number, width: number, height: number };
-    //angle?: number;
+    angle?: number;
+    left?: number;
+    top?: number;
+    width?: number;
+    height?: number;
 }
 
 interface SmartBoxState {
@@ -150,8 +154,12 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
         disableAllSizing: false,
         disableHorizontalDragging: false,
         disableVerticalDragging: false,
-        bounds: 'parent'
-        //angle: 0
+        bounds: 'parent',
+        angle: 0,
+        left: 100,
+        top: 100,
+        width: 100,
+        height: 100
     }
 
     mouseDownEvent?: React.MouseEvent<HTMLDivElement, MouseEvent>;
@@ -180,9 +188,32 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
         this.mouseUp = this.mouseUp.bind(this);
     }
 
-    //static getDerivedStateFromProps(props: SmartBoxProps, state: SmartBoxState) {
-
-    //}
+    componentDidUpdate(prevProps: SmartBoxProps, prevState: SmartBoxState, snapshot: any) {
+        let newState: Partial<SmartBoxState> = {};
+        let changed = false;
+        if (this.props.angle !== prevProps.angle) {
+            newState.angle = this.props.angle;
+            changed = true;
+        }
+        if (this.props.left !== prevProps.left) {
+            newState.left = this.props.left;
+            changed = true;
+        }
+        if (this.props.top !== prevProps.top) {
+            newState.top = this.props.top;
+            changed = true;
+        }
+        if (this.props.width !== prevProps.width) {
+            newState.width = this.props.width;
+            changed = true;
+        }
+        if (this.props.height !== prevProps.height) {
+            newState.height = this.props.height;
+            changed = true;
+        }
+        if (changed)
+            this.setState({ ...this.state, ...newState });
+    }
 
     mouseUp(e: MouseEvent) {
         //console.log("up", this, e);
@@ -1002,11 +1033,18 @@ export default class SmartBox extends React.Component<SmartBoxProps, SmartBoxSta
                         onDoubleClick={e => {
                             //console.log("dblclick rotate", this, e);
                             let step = e.altKey ? 15 : 90;
+                            this.props.onRotatingBegin?.(e, { ...this.state });
                             if (this.state.angle % step === 0) {
                                 step *= e.shiftKey ? -1 : 1;
-                                this.setState({ ...this.state, angle: (this.state.angle + step + 360) % 360 });
+                                this.setState({ ...this.state, angle: (this.state.angle + step + 360) % 360 }, () => {
+                                    this.props.onRotating?.(e, { ...this.state });
+                                    this.props.onRotatingEnd?.(e, { ...this.state });
+                                });
                             } else {
-                                this.setState({ ...this.state, angle: 0 });
+                                this.setState({ ...this.state, angle: 0 }, () => {
+                                    this.props.onRotating?.(e, { ...this.state });
+                                    this.props.onRotatingEnd?.(e, { ...this.state });
+                                });
                             }
                             e.preventDefault();
                             e.stopPropagation();
